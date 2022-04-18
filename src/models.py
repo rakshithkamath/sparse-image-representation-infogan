@@ -43,17 +43,17 @@ def define_generator(input_shape):
     Returns:
         tensorflow.keras.models.Model: Tensorflow model
     """
-    input_dim = layers.Input(shape=(input_shape,))
-    gen = layers.Dense(7*7*128, kernel_initializer=RandomNormal(stddev=0.02))(input_dim)
-    gen = layers.Activation("relu")(gen)
-    gen = layers.BatchNormalization()(gen)
-    gen = layers.Reshape((7, 7, 128))(gen)
-    gen = layers.Conv2DTranspose(64, (4,4), strides=(2,2), padding="same", kernel_initializer=RandomNormal(stddev=0.02))(gen)
-    gen = layers.Activation("relu")(gen)
-    gen = layers.BatchNormalization()(gen)
-    gen = layers.Conv2DTranspose(1, (4,4), strides=(2,2), padding="same", kernel_initializer=RandomNormal(stddev=0.02))(gen)
-    out_layer = layers.Activation("tanh")(gen)
-    gen_model = Model(input_dim, out_layer)
+    gen_model = tf.keras.Sequential([
+        layers.Input(shape=(input_shape,)),
+        layers.Dense(7*7*128, kernel_initializer=RandomNormal(stddev=0.02), activation="relu"),
+        layers.BatchNormalization(),
+        layers.Reshape((7, 7, 128)),
+        layers.Conv2DTranspose(64, (4,4), strides=(2,2), padding="same",
+            kernel_initializer=RandomNormal(stddev=0.02), activation="relu"),
+        layers.BatchNormalization(),
+        layers.Conv2DTranspose(1, (4,4), strides=(2,2), padding="same",
+            kernel_initializer=RandomNormal(stddev=0.02), activation="tanh"),
+    ])
     return gen_model
 
 def define_gan(g_model, d_model, q_model):
