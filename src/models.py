@@ -43,17 +43,19 @@ def define_generator(input_shape):
     Returns:
         tensorflow.keras.models.Model: Tensorflow model
     """
-    gen_model = tf.keras.Sequential([
-        layers.Input(shape=(input_shape,)),
-        layers.Dense(7*7*128, kernel_initializer=RandomNormal(stddev=0.02), activation="relu"),
-        layers.BatchNormalization(),
-        layers.Reshape((7, 7, 128)),
-        layers.Conv2DTranspose(64, (4,4), strides=(2,2), padding="same",
-            kernel_initializer=RandomNormal(stddev=0.02), activation="relu"),
-        layers.BatchNormalization(),
-        layers.Conv2DTranspose(1, (4,4), strides=(2,2), padding="same",
-            kernel_initializer=RandomNormal(stddev=0.02), activation="tanh"),
-    ])
+    input_dim = layers.Input(shape=(input_shape,))
+    gen = layers.Dense(7*7*128, kernel_initializer=RandomNormal(stddev=0.02))(input_dim)
+    gen = layers.Activation("relu")(gen)
+    gen = layers.BatchNormalization()(gen)
+    gen = layers.Reshape((7, 7, 128))(gen)
+    gen = layers.Conv2DTranspose(64, (4,4), strides=(2,2), padding="same", kernel_initializer=RandomNormal(stddev=0.02))(gen)
+    gen = layers.Activation("relu")(gen)
+    gen = layers.BatchNormalization()(gen)
+    gen = layers.Conv2DTranspose(1, (4,4), strides=(2,2), padding="same", kernel_initializer=RandomNormal(stddev=0.02))(gen)
+    gen = layers.Activation("tanh")(gen)
+    gen = tf.math.add(gen, tf.ones_like(gen))
+    out_layer = tf.math.divide(gen, 2*tf.ones_like(gen))
+    gen_model = Model(input_dim, out_layer)
     return gen_model
 
 def define_gan(g_model, d_model, q_model):
