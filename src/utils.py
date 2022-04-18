@@ -75,5 +75,5 @@ def generate_all_cat_fake_samples(generator, latent_dim, cat_dim):
     cat_codes = np.arange(cat_dim)
     cat_codes = to_categorical(cat_codes, num_classes=cat_dim)
     z_input = np.hstack((z_latent, cat_codes))
-    images = generator.predict(z_input)
+    images = generator(z_input, training=True)
     return images

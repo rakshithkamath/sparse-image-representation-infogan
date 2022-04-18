@@ -18,6 +18,11 @@ from utils import generate_real_samples, generate_latent_points, generate_fake_s
 from visualization import summarize_performance
 # from data import TrainingData
 
+def custom_loss(y, y_pred):
+    loss = tf.keras.losses.CategoricalCrossentropy()(y, y_pred)
+    pdb.set_trace()
+    return loss
+
 def train(args):
 
     latent_dim = args.latent_dim
@@ -35,7 +40,8 @@ def train(args):
 
     if args.model_in_folder:
         this_time_folder = args.model_in_folder
-        poss_files = glob.glob(os.path.join(args.model_in_folder, "*_generator_model.h5"))
+        joined_path = os.path.join(args.model_in_folder, "*_generator_model.h5")
+        poss_files = glob.glob(joined_path)
         latest_i = max([int(os.path.split(x)[1].split("_")[0]) for x in poss_files])
         gen_model.load_weights(os.path.join(args.model_in_folder, f"{latest_i}_generator_model.h5"))
         gan_model.load_weights(os.path.join(args.model_in_folder, f"{latest_i}_gan_model.h5"))
@@ -45,12 +51,12 @@ def train(args):
         offset = 0
 
     (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
-    dataset = x_train
+    dataset = x_train/255
     
     # compile models
     disc_model.compile(loss="binary_crossentropy", optimizer=optimizers.Adam(lr=args.learning_rate, beta_1=args.adam_beta))
     opt = optimizers.Adam(lr=args.learning_rate, beta_1=args.adam_beta)
-    gan_model.compile(loss=["binary_crossentropy", "categorical_crossentropy"], optimizer=opt, loss_weights=[1, TrainingConfig.RELATIVE_LOSS])
+    gan_model.compile(loss=[tf.keras.losses.BinaryCrossentropy(), tf.keras.losses.CategoricalCrossentropy()], optimizer=opt, loss_weights=[1, TrainingConfig.RELATIVE_LOSS], run_eagerly=True)
     
     batch_per_epoch = int(dataset.shape[0] / args.batch_size)
     num_steps = batch_per_epoch * args.epochs
@@ -65,12 +71,21 @@ def train(args):
         # Generator Training
         z_input, cat_codes = generate_latent_points(latent_dim, num_cat, args.batch_size)
         y_gan = np.ones((args.batch_size, 1))
+
+
+        # print("before predict")
+        # gan_output, cat_code_output = gan_model(z_input)
+
         _, g_1, g_2 = gan_model.train_on_batch(z_input, [y_gan, cat_codes])
+
+        
+        # pdb.set_trace()
 
         print(f"i={i+1}, Disc Loss (real, fake)=({d_loss1:.3f} {d_loss2:.3f}), Gen Loss:{g_1:.3f} Q Loss {g_2:.3f}")
 
         if (i+1) % (batch_per_epoch * 1) == 0:
             summarize_performance(this_time_folder, i, gen_model, gan_model, latent_dim, num_cat)
+            summarize_performance(this_time_folder, i+100000, gen_model, gan_model, latent_dim, num_cat)
             gen_model.save(os.path.join(this_time_folder, f"{(i+1)}_generator_model.h5"))
             gan_model.save(os.path.join(this_time_folder, f"{(i+1)}_gan_model.h5"))
             disc_model.save(os.path.join(this_time_folder, f"{(i+1)}_disc_model.h5"))
@@ -85,12 +100,12 @@ if __name__ == "__main__":
                         help="Learning rate")
     parser.add_argument("--adam_beta", required=False, default=TrainingConfig.ADAM_BETA,
                         help="Beta")
-    parser.add_argument("--latent_noise_dim", required=False, default=TrainingConfig.LATENT_NOISE_DIM,
+    parser.add_argument("--latent_dim", required=False, default=TrainingConfig.LATENT_NOISE_DIM,
                         help="The number of elements of pure noise")
     parser.add_argument("--model_dir", required=False,
                         default=GlobalConfig.get("MODEL_DIR"))
-    parser.add_argument("--batch_size", required=False,
-                        default=GlobalConfig.get("BATCH_SIZE"))
+    parser.add_argument("--batch_size", required=False, type=int,
+                        default=TrainingConfig.BATCH_SIZE)
     parser.add_argument("--model_in_folder", required=False,
         help="Path to a folder containing disc / generator weights. The latest one will be loaded.")
     args = parser.parse_args()
