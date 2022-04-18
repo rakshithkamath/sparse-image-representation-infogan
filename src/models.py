@@ -43,16 +43,16 @@ def define_generator(input_shape):
     Returns:
         tensorflow.keras.models.Model: Tensorflow model
     """
-    input_dim = tf.layers.Input(shape=(input_shape,))
-    gen = tf.layers.Dense(7*7*128, kernel_initializer=RandomNormal(stddev=0.02))(input_dim)
-    gen = tf.layers.Activation("relu")(gen)
-    gen = tf.layers.BatchNormalization()(gen)
-    gen = tf.layers.Reshape((7, 7, 128))(gen)
-    gen = tf.layers.Conv2DTranspose(64, (4,4), strides=(2,2), padding="same", kernel_initializer=init)(gen)
-    gen = tf.layers.Activation("relu")(gen)
-    gen = tf.layers.BatchNormalization()(gen)
-    gen = tf.layers.Conv2DTranspose(1, (4,4), strides=(2,2), padding="same", kernel_initializer=init)(gen)
-    out_layer = tf.layers.Activation("tanh")(gen)
+    input_dim = layers.Input(shape=(input_shape,))
+    gen = layers.Dense(7*7*128, kernel_initializer=RandomNormal(stddev=0.02))(input_dim)
+    gen = layers.Activation("relu")(gen)
+    gen = layers.BatchNormalization()(gen)
+    gen = layers.Reshape((7, 7, 128))(gen)
+    gen = layers.Conv2DTranspose(64, (4,4), strides=(2,2), padding="same", kernel_initializer=RandomNormal(stddev=0.02))(gen)
+    gen = layers.Activation("relu")(gen)
+    gen = layers.BatchNormalization()(gen)
+    gen = layers.Conv2DTranspose(1, (4,4), strides=(2,2), padding="same", kernel_initializer=RandomNormal(stddev=0.02))(gen)
+    out_layer = layers.Activation("tanh")(gen)
     gen_model = Model(input_dim, out_layer)
     return gen_model
 
@@ -74,7 +74,7 @@ def define_gan(g_model, d_model, q_model):
         tensorflow.keras.models.Model: Tensorflow model of the joined system
     """
     for layer in d_model.layers:
-        if not isinstance(layer, tf.layers.BatchNormalization):
+        if not isinstance(layer, layers.BatchNormalization):
             layer.trainable = False
     d_output = d_model(g_model.output)
     q_output = q_model(g_model.output)
