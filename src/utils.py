@@ -71,7 +71,7 @@ def generate_all_cat_fake_samples(generator, latent_dim, cat_dim):
     """
     num_samples = cat_dim
     # Use a larger scale for the noise
-    z_latent = np.random.normal(loc=0.0, scale=5, size=(num_samples, latent_dim))
+    z_latent = np.random.normal(loc=0.0, scale=2, size=(num_samples, latent_dim))
     cat_codes = np.arange(cat_dim)
     cat_codes = to_categorical(cat_codes, num_classes=cat_dim)
     z_input = np.hstack((z_latent, cat_codes))
