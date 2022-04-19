@@ -54,9 +54,9 @@ def train(args):
     dataset = x_train/255
     
     # compile models
-    disc_model.compile(loss="binary_crossentropy", optimizer=optimizers.Adam(lr=args.learning_rate, beta_1=args.adam_beta))
-    opt = optimizers.Adam(lr=args.learning_rate, beta_1=args.adam_beta)
-    gan_model.compile(loss=[tf.keras.losses.BinaryCrossentropy(), tf.keras.losses.CategoricalCrossentropy()], optimizer=opt, loss_weights=[1, TrainingConfig.RELATIVE_LOSS], run_eagerly=True)
+    disc_model.compile(loss="binary_crossentropy", optimizer=optimizers.Adam(lr=args.learning_rate_disc, beta_1=args.adam_beta))
+    opt = optimizers.Adam(lr=args.learning_rate_gen, beta_1=args.adam_beta)
+    gan_model.compile(loss=[tf.keras.losses.BinaryCrossentropy(), tf.keras.losses.CategoricalCrossentropy()], optimizer=opt, loss_weights=[1, TrainingConfig.RELATIVE_LOSS])
     
     batch_per_epoch = int(dataset.shape[0] / args.batch_size)
     num_steps = batch_per_epoch * args.epochs
@@ -83,7 +83,7 @@ def train(args):
 
         print(f"i={i+1}, Disc Loss (real, fake)=({d_loss1:.3f} {d_loss2:.3f}), Gen Loss:{g_1:.3f} Q Loss {g_2:.3f}")
 
-        if (i+1) % (batch_per_epoch * 1) == 0:
+        if (i+1) % (batch_per_epoch * 5) == 0:
             summarize_performance(this_time_folder, i, gen_model, gan_model, latent_dim, num_cat)
             summarize_performance(this_time_folder, i+100000, gen_model, gan_model, latent_dim, num_cat)
             gen_model.save(os.path.join(this_time_folder, f"{(i+1)}_generator_model.h5"))
@@ -95,9 +95,11 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--epochs", required=False, default=TrainingConfig.NUM_EPOCHS,
-                        help="Number of epochs to train.")
-    parser.add_argument("--learning_rate", required=False, default=TrainingConfig.LEARNING_RATE,
-                        help="Learning rate")
+                        help="Number of epochs to train.", type=int)
+    parser.add_argument("--learning_rate_disc", required=False, default=TrainingConfig.LEARNING_RATE_DISC,
+                        help="Learning rate for the discriminator")
+    parser.add_argument("--learning_rate_gen", required=False, default=TrainingConfig.LEARNING_RATE_GEN,
+                        help="Learning rate for the generator")
     parser.add_argument("--adam_beta", required=False, default=TrainingConfig.ADAM_BETA,
                         help="Beta")
     parser.add_argument("--latent_dim", required=False, default=TrainingConfig.LATENT_NOISE_DIM,

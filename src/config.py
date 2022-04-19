@@ -9,7 +9,7 @@ class GlobalConfig:
         "RANDOM_SEED": 42,
         # "TRAIN_IMAGE_DIR": "data/raw/",
         # "EXAMPLE_IMAGE_DIR": "data/example/",
-        "MODEL_DIR": "trained_models",
+        "MODEL_DIR": "trained_models.nosync",
         "LATEST_MODEL": "",
     }
     __setters = []
@@ -37,9 +37,10 @@ class TrainingConfig():
     VALID_SAMPLE_SIZE = 2500*0.2
     BATCH_SIZE = 64
     NUM_EPOCHS = 100
-    LEARNING_RATE = 0.0002
-    ADAM_BETA = 0.5
-    RELATIVE_LOSS = 2
+    LEARNING_RATE_DISC = 0.0002
+    LEARNING_RATE_GEN = 0.001
+    ADAM_BETA = 0.99
+    RELATIVE_LOSS = 1
     LATENT_NOISE_DIM = 62
 
 
