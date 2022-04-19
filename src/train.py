@@ -31,6 +31,10 @@ def train(args):
 
     gen_model = define_generator(gen_input_size)
     disc_model, q_model = define_discriminator_and_recognition(num_cat)
+
+    # Compile discriminator before passing to define_gan as that will set some weights as non-trainible
+    disc_model.compile(loss="binary_crossentropy", optimizer=optimizers.Adam(lr=args.learning_rate_disc, beta_1=args.adam_beta))
+
     gan_model = define_gan(gen_model, disc_model, q_model)
 
 
@@ -54,11 +58,10 @@ def train(args):
     dataset = x_train/(127.5) - 1
     
     
-    # compile models
-    disc_model.compile(loss="binary_crossentropy", optimizer=optimizers.Adam(lr=args.learning_rate_disc, beta_1=args.adam_beta))
     opt = optimizers.Adam(lr=args.learning_rate_gen, beta_1=args.adam_beta)
     gan_model.compile(loss=[tf.keras.losses.BinaryCrossentropy(), tf.keras.losses.CategoricalCrossentropy()], optimizer=opt, loss_weights=[1, TrainingConfig.RELATIVE_LOSS])
     
+
     batch_per_epoch = int(dataset.shape[0] / args.batch_size)
     num_steps = batch_per_epoch * args.epochs
     for iter in range(num_steps):
