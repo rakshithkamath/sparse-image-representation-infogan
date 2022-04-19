@@ -70,8 +70,8 @@ def train(args):
         d_loss2 = disc_model.train_on_batch(X_fake, y_fake)
 
         # Generator Training
-        z_input, cat_codes = generate_latent_points(latent_dim, num_cat, args.batch_size)
-        y_gan = np.ones((args.batch_size, 1))
+        z_input, cat_codes = generate_latent_points(latent_dim, num_cat, int(args.batch_size / 2))
+        y_gan = np.ones((int(args.batch_size / 2), 1))
 
 
         # print("before predict")
