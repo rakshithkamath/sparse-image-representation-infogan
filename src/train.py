@@ -51,7 +51,8 @@ def train(args):
         offset = 0
 
     (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
-    dataset = x_train/255
+    dataset = x_train/(127.5) - 1
+    
     
     # compile models
     disc_model.compile(loss="binary_crossentropy", optimizer=optimizers.Adam(lr=args.learning_rate_disc, beta_1=args.adam_beta))

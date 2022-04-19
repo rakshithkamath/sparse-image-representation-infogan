@@ -52,9 +52,7 @@ def define_generator(input_shape):
     gen = layers.Activation("relu")(gen)
     gen = layers.BatchNormalization()(gen)
     gen = layers.Conv2DTranspose(1, (4,4), strides=(2,2), padding="same", kernel_initializer=RandomNormal(stddev=0.02))(gen)
-    gen = layers.Activation("tanh")(gen)
-    gen = tf.math.add(gen, tf.ones_like(gen))
-    out_layer = tf.math.divide(gen, 2*tf.ones_like(gen))
+    out_layer = layers.Activation("tanh")(gen)
     gen_model = Model(input_dim, out_layer)
     return gen_model
 
