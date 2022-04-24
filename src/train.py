@@ -7,7 +7,7 @@ import argparse
 from re import T
 import time
 import glob
-from black import TRANSFORMED_MAGICS
+# from black import TRANSFORMED_MAGICS
 import numpy as np
 import tensorflow as tf
 import tensorflow.keras.optimizers as optimizers
@@ -27,7 +27,7 @@ def train(args):
 
     latent_dim = args.latent_dim
     num_cat = 10
-    gen_input_size = latent_dim + num_cat
+    gen_input_size = latent_dim + num_cat+1 #adding coninuous variable as well
 
     gen_model = define_generator(gen_input_size)
     disc_model, q_model = define_discriminator_and_recognition(num_cat)
@@ -87,7 +87,7 @@ def train(args):
 
         print(f"i={i+1}, Disc Loss (real, fake)=({d_loss1:.3f} {d_loss2:.3f}), Gen Loss:{g_1:.3f} Q Loss {g_2:.3f}")
 
-        if (i+1) % (batch_per_epoch * 5) == 0:
+        if (i+1) % (batch_per_epoch) == 0:
             summarize_performance(this_time_folder, i, gen_model, gan_model, latent_dim, num_cat)
             summarize_performance(this_time_folder, i+100000, gen_model, gan_model, latent_dim, num_cat)
             gen_model.save(os.path.join(this_time_folder, f"{(i+1)}_generator_model.h5"))

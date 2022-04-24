@@ -1,5 +1,7 @@
 import numpy as np
+import tensorflow as tf
 from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.layers import Concatenate
 import pdb
 
 def generate_real_samples(dataset, num_samples):
@@ -34,11 +36,22 @@ def generate_latent_points(latent_dim, cat_dim, num_samples):
         z_input: np.array
         cat_codes: Needed as a label for the Q network
     """
-    z_latent = np.random.normal(loc=0.0, scale=2, size=(num_samples, latent_dim))
-    cat_codes = np.random.randint(0, cat_dim, num_samples)
-    cat_codes = to_categorical(cat_codes, num_classes=cat_dim)
-    z_input = np.hstack((z_latent, cat_codes))
-    return [z_input, cat_codes]
+    # z_latent = np.random.normal(loc=0.0, scale=2, size=(num_samples, latent_dim))
+    # cat_codes = np.random.randint(0, cat_dim, num_samples)
+    # cat_codes = to_categorical(cat_codes, num_classes=cat_dim)
+    # z_input = np.hstack((z_latent, cat_codes))
+    # return [z_input, cat_codes]
+    # create noise input
+    noise = tf.random.normal([num_samples, latent_dim])
+    # Create categorical latent code
+    label = tf.random.uniform([num_samples], minval=0, maxval=10, dtype=tf.int32)
+    label = tf.one_hot(label, depth=cat_dim)
+    # Create one continuous latent code
+    c_1 = tf.random.uniform([num_samples, 1], minval=-1, maxval=1)
+    z_input=Concatenate()([label, c_1, noise])
+
+    return z_input,label
+
 
 def generate_fake_samples(generator, latent_dim, num_cat, num_samples):
     """Using the tf.generator network and noise, generate samples
@@ -71,9 +84,21 @@ def generate_all_cat_fake_samples(generator, latent_dim, cat_dim):
     """
     num_samples = cat_dim
     # Use a larger scale for the noise
-    z_latent = np.random.normal(loc=0.0, scale=2, size=(num_samples, latent_dim))
-    cat_codes = np.arange(cat_dim)
-    cat_codes = to_categorical(cat_codes, num_classes=cat_dim)
-    z_input = np.hstack((z_latent, cat_codes))
+    # z_latent = np.random.normal(loc=0.0, scale=2, size=(num_samples, latent_dim))
+    # cat_codes = np.arange(cat_dim)
+    # cat_codes = to_categorical(cat_codes, num_classes=cat_dim)
+    # z_input = np.hstack((z_latent, cat_codes))
+    # images = generator(z_input, training=True)
+    # return images
+    # create noise input
+    noise = tf.random.normal([num_samples, latent_dim],stddev=2.0)
+    # Create categorical latent code
+    label = tf.random.uniform([num_samples], minval=0, maxval=10, dtype=tf.int32)
+    label = tf.one_hot(label, depth=cat_dim)
+    # Create one continuous latent code
+    c_1 = tf.random.uniform([num_samples, 1], minval=-1, maxval=1)
+
+    z_input=Concatenate()([label, c_1, noise])
+
     images = generator(z_input, training=True)
     return images
