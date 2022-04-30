@@ -27,8 +27,8 @@ def train(args):
 
     latent_dim = args.latent_dim
     num_cat = 10
-    num_continuous = 1
-    gen_input_size = latent_dim + num_cat+1 #adding coninuous variable as well
+    num_continuous = 4
+    gen_input_size = latent_dim + num_cat + num_continuous #adding coninuous variable as well
 
     gen_model = define_generator(gen_input_size)
     disc_model, q_model = define_discriminator_and_recognition(num_cat, num_continuous)
@@ -89,7 +89,7 @@ def train(args):
 
         if (i+1) % (batch_per_epoch * 5) == 0:
             # summarize_performance(this_time_folder, i, gen_model, gan_model, latent_dim, num_cat)
-            summarize_performance_continuous(this_time_folder, i, gen_model, gan_model, latent_dim, num_cat)
+            summarize_performance_continuous(this_time_folder, i, gen_model, gan_model, latent_dim, num_cat, num_continuous)
             # summarize_performance(this_time_folder, i+100000, gen_model, gan_model, latent_dim, num_cat)
             gen_model.save(os.path.join(this_time_folder, f"{(i+1)}_generator_model.h5"))
             gan_model.save(os.path.join(this_time_folder, f"{(i+1)}_gan_model.h5"))

@@ -32,7 +32,7 @@ def summarize_performance(output_folder, step, gen_model, gan_model, latent_dim,
     plt.close()
 
 
-def summarize_performance_continuous(output_folder, step, gen_model, gan_model, latent_dim, num_cat, num_samples=9):
+def summarize_performance_continuous(output_folder, step, gen_model, gan_model, latent_dim, num_cat, num_continuous, num_samples=9):
     """
 
     Args:
@@ -47,41 +47,42 @@ def summarize_performance_continuous(output_folder, step, gen_model, gan_model, 
 
     """
     
-    num_cat = 10
-    cat_info = [num_cat]
-    other_cat_fixed_val = [4]
-    target_cat = 0
-    num_samples_per_cat = 5
+    for contin_i in range(num_continuous):
+        num_cat = 10
+        cat_info = [num_cat]
+        other_cat_fixed_val = [4]
+        target_cat = 0
+        num_samples_per_cat = 10
 
-    contin_info = [2]
-    other_continous_fixed_val = [None]
-    target_continuous = 0
-    num_samples_per_continuous = 5
+        contin_info = [2]*num_continuous
+        other_continous_fixed_val = [0]*num_continuous
+        target_continuous = contin_i
+        num_samples_per_continuous = 10
 
-    latent_codes = generate_ordered_latent_codes("span_both",
-                                cat_info, 
-                                other_cat_fixed_val, 
-                                target_cat, 
-                                num_samples_per_cat, 
-                                contin_info, 
-                                other_continous_fixed_val, 
-                                target_continuous, 
-                                num_samples_per_continuous)
-    latent_codes = latent_codes.reshape((num_cat*num_samples_per_continuous, -1))
-    X = gen_model(latent_codes, training=True)
+        latent_codes = generate_ordered_latent_codes("span_both",
+                                    cat_info, 
+                                    other_cat_fixed_val, 
+                                    target_cat, 
+                                    num_samples_per_cat, 
+                                    contin_info, 
+                                    other_continous_fixed_val, 
+                                    target_continuous, 
+                                    num_samples_per_continuous)
+        latent_codes = latent_codes.reshape((num_cat*num_samples_per_continuous, -1))
+        X = gen_model(latent_codes, training=True)
 
-    # X = generate_all_cat_fake_samples(gen_model, latent_dim, num_cat)
-    # scale from [-1,1] to [0,1]
-    # X = (X + 1) / 2.0
+        # X = generate_all_cat_fake_samples(gen_model, latent_dim, num_cat)
+        # scale from [-1,1] to [0,1]
+        # X = (X + 1) / 2.0
 
-    fig=plt.figure(figsize=(50, 100))
-    for i in range(num_samples_per_continuous*num_cat):
-        fig.add_subplot(num_cat, num_samples_per_continuous, 1 + i)
-        plt.axis('off')
-        plt.imshow(X[i, :, :, 0], cmap='gray_r')
-    filename1 = os.path.join(output_folder, f'generated_plot_{step+1}.png')
-    fig.tight_layout()  
-    fig.savefig(filename1)
-    plt.close()
+        fig=plt.figure(figsize=(100, 100))
+        for i in range(num_samples_per_continuous*num_cat):
+            fig.add_subplot(num_cat, num_samples_per_continuous, 1 + i)
+            plt.axis('off')
+            plt.imshow(X[i, :, :, 0], cmap='gray_r')
+        filename1 = os.path.join(output_folder, f'generated_plot_{step+1}_contin_{contin_i}.png')
+        fig.tight_layout()  
+        fig.savefig(filename1)
+        plt.close()
 
 
