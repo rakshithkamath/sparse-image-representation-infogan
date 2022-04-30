@@ -1,0 +1,6 @@
+trained_mode
+*.png
+*.h5
+*plots*
+*__pycache__*
+*ipc*
