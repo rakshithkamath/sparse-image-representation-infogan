@@ -5,8 +5,9 @@ from tensorflow.keras.models import Model
 import tensorflow.keras.layers as layers
 from tensorflow.keras.initializers import RandomNormal
 from config import TrainingConfig
+import pdb
 
-def define_discriminator_and_recognition(cat_dim, input_shape=(28,28,1)):
+def define_discriminator_and_recognition(cat_dim, num_continuous, input_shape=(28,28,1)):
     """
     Args:
     cat_dim:  number of categorical variables present in the dataset for our study
@@ -28,8 +29,10 @@ def define_discriminator_and_recognition(cat_dim, input_shape=(28,28,1)):
     q = layers.Dense(128)(d)
     q = layers.BatchNormalization()(q)
     q = layers.LeakyReLU(alpha=0.1)(q)
-    out_codes = layers.Dense(cat_dim, activation="softmax")(q)
-    q_model = Model(in_image, out_codes)
+    cat_out_codes = layers.Dense(cat_dim, activation="softmax")(q)
+    contin_out_codes = layers.Dense(num_continuous)(q)
+
+    q_model = Model(in_image, outputs=[cat_out_codes, contin_out_codes])
     return d_model, q_model
 
 def define_generator(input_shape):
@@ -78,5 +81,14 @@ def define_gan(g_model, d_model, q_model):
             layer.trainable = False
     d_output = d_model(g_model.output)
     q_output = q_model(g_model.output)
-    model = Model(g_model.input, [d_output, q_output])
+
+
+    if isinstance(q_output, list):
+        joined_output = [d_output] + q_output
+    else:
+        joined_output = [d_output, q_output]
+
+        
+
+    model = Model(g_model.input, joined_output)
     return model

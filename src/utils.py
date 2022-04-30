@@ -21,7 +21,7 @@ def generate_real_samples(dataset, num_samples):
     y = np.ones((num_samples, 1))
     return X, y
 
-def generate_latent_points(latent_dim, cat_dim, num_samples):
+def generate_latent_points(latent_dim, cat_dim, num_continuous, num_samples):
     """Get random input to generator
 
     Input is made up of random normal noise and a 1 hot encoded vector
@@ -47,13 +47,13 @@ def generate_latent_points(latent_dim, cat_dim, num_samples):
     label = tf.random.uniform([num_samples], minval=0, maxval=10, dtype=tf.int32)
     label = tf.one_hot(label, depth=cat_dim)
     # Create one continuous latent code
-    c_1 = tf.random.uniform([num_samples, 1], minval=-1, maxval=1)
-    z_input=Concatenate()([label, c_1, noise])
+    contin_codes = tf.random.uniform([num_samples, num_continuous], minval=-1, maxval=1)
+    z_input=Concatenate()([label, contin_codes, noise])
 
-    return z_input,label
+    return z_input, label, contin_codes
 
 
-def generate_fake_samples(generator, latent_dim, num_cat, num_samples):
+def generate_fake_samples(generator, latent_dim, num_cat, num_continuous, num_samples):
     """Using the tf.generator network and noise, generate samples
 
     Args:
@@ -65,7 +65,7 @@ def generate_fake_samples(generator, latent_dim, num_cat, num_samples):
     Returns:
         tuple(X_train, y_train): Training data with y labels always as 0
     """
-    z_input, _ = generate_latent_points(latent_dim, num_cat, num_samples)
+    z_input, _, _ = generate_latent_points(latent_dim, num_cat, num_continuous, num_samples)
     images = generator.predict(z_input)
     y = np.zeros((num_samples, 1))
     return images, y

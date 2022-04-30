@@ -27,10 +27,11 @@ def train(args):
 
     latent_dim = args.latent_dim
     num_cat = 10
+    num_continuous = 1
     gen_input_size = latent_dim + num_cat+1 #adding coninuous variable as well
 
     gen_model = define_generator(gen_input_size)
-    disc_model, q_model = define_discriminator_and_recognition(num_cat)
+    disc_model, q_model = define_discriminator_and_recognition(num_cat, num_continuous)
 
     # Compile discriminator before passing to define_gan as that will set some weights as non-trainible
     disc_model.compile(loss="binary_crossentropy", optimizer=optimizers.Adam(lr=args.learning_rate_disc, beta_1=args.adam_beta))
@@ -59,33 +60,32 @@ def train(args):
     
     
     opt = optimizers.Adam(lr=args.learning_rate_gen, beta_1=args.adam_beta)
-    gan_model.compile(loss=[tf.keras.losses.BinaryCrossentropy(), tf.keras.losses.CategoricalCrossentropy()], optimizer=opt, loss_weights=[1, TrainingConfig.RELATIVE_LOSS])
+    gan_model.compile(loss=[tf.keras.losses.BinaryCrossentropy(), tf.keras.losses.CategoricalCrossentropy(), tf.keras.losses.MeanSquaredError()], optimizer=opt, loss_weights=[1, TrainingConfig.RELATIVE_LOSS])
     
-
     batch_per_epoch = int(dataset.shape[0] / args.batch_size)
     num_steps = batch_per_epoch * args.epochs
     for iter in range(num_steps):
         i = iter + offset
         # Discriminator Training
         X_real, y_real = generate_real_samples(dataset, int(args.batch_size / 2))
-        X_fake, y_fake = generate_fake_samples(gen_model, latent_dim, num_cat, int(args.batch_size / 2))
+        X_fake, y_fake = generate_fake_samples(gen_model, latent_dim, num_cat, num_continuous, int(args.batch_size / 2))
         d_loss1 = disc_model.train_on_batch(X_real, y_real)
         d_loss2 = disc_model.train_on_batch(X_fake, y_fake)
 
         # Generator Training
-        z_input, cat_codes = generate_latent_points(latent_dim, num_cat, int(args.batch_size / 2))
+        z_input, cat_codes, contin_codes = generate_latent_points(latent_dim, num_cat, num_continuous, int(args.batch_size / 2))
         y_gan = np.ones((int(args.batch_size / 2), 1))
 
 
         # print("before predict")
         # gan_output, cat_code_output = gan_model(z_input)
 
-        _, g_1, g_2 = gan_model.train_on_batch(z_input, [y_gan, cat_codes])
-
+        
+        g_1, q_loss_cat, q_loss_continuous, _ = gan_model.train_on_batch(z_input, [y_gan, cat_codes, contin_codes])
         
         # pdb.set_trace()
 
-        print(f"i={i+1}, Disc Loss (real, fake)=({d_loss1:.3f} {d_loss2:.3f}), Gen Loss:{g_1:.3f} Q Loss {g_2:.3f}")
+        print(f"i={i+1}, Disc Loss (real, fake)=({d_loss1:.3f} {d_loss2:.3f}), Gen Loss:{g_1:.3f} Q Loss cat {q_loss_cat:.3f} Q Loss contin {q_loss_continuous:.3f}")
 
         if (i+1) % (batch_per_epoch) == 0:
             summarize_performance(this_time_folder, i, gen_model, gan_model, latent_dim, num_cat)
