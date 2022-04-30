@@ -3,6 +3,7 @@ import tensorflow as tf
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.layers import Concatenate
 import pdb
+from config import TrainingConfig
 
 def generate_real_samples(dataset, num_samples):
     """Randomly select real samples from dataset
@@ -103,7 +104,8 @@ def generate_all_cat_fake_samples(generator, latent_dim, cat_dim):
     images = generator(z_input, training=True)
     return images
 
-def generate_ordered_latent_codes(span_type, cat_info, other_cat_fixed_val, target_cat, num_samples_per_cat, contin_info, other_continous_fixed_val, target_continuous, num_samples_per_continuous, latent_noise_dim=2):
+
+def generate_ordered_latent_codes(span_type, cat_info, other_cat_fixed_val, target_cat, num_samples_per_cat, contin_info, other_continous_fixed_val, target_continuous, num_samples_per_continuous, latent_noise_dim=TrainingConfig.LATENT_NOISE_DIM):
     """Generate latent points in an ordered way to understand their effect on GAN output
 
     total_latent_code_len = latent_noise_dim + sum(cat_info) + num_continuous_codes 
@@ -200,14 +202,14 @@ def generate_ordered_latent_codes(span_type, cat_info, other_cat_fixed_val, targ
         #latent_codes_no_noise.shape = (cat_info[target_cat], num_samples_per_continuous, latent_code_len_no_noise)
 
     # Add the pure noise part of the latent code
-    latent_noise = np.random.normal(loc=0, scale=1, size=(
-        latent_codes_no_noise.shape[0], latent_codes_no_noise.shape[1], latent_noise_dim))
+    latent_noise = np.random.normal(loc=0, scale=1, size=(1, 1, latent_noise_dim))
+    latent_noise = np.tile(latent_noise, (latent_codes_no_noise.shape[0], latent_codes_no_noise.shape[1], 1))
 
     latent_codes = np.concatenate(
         [latent_noise, latent_codes_no_noise], axis=2)
     return latent_codes
 
-def generate_ordered_latent_cat_codes(cat_info, other_cat_fixed_val, target_cat, num_samples_per_cat):
+def generate_ordered_latent_cat_codes(cat_info, other_cat_fixed_val, target_cat, num_samples_per_cat, num_samples=None):
     """Generate a span of categorical latent codes
 
     Example Output for
@@ -236,10 +238,8 @@ def generate_ordered_latent_cat_codes(cat_info, other_cat_fixed_val, target_cat,
         num_samples_per_cat (int): Number of samples for each category of the target cat
 
     Returns:
-        np.array: dimensions are ((num_target_cat, num_samples_per_cat, sum(cat_info)) and all values are 1 or 0
+        np.array: dimensions are ((cat_info[target_cat], num_samples_per_cat, sum(cat_info)) and all values are 1 or 0
     """
-
-    # This first block is to accomodate spanning the categorical variable or keeping it constant when the continuous one is spanned
     if num_samples is None:
         num_samples = num_samples_per_cat*cat_info[target_cat]
         num_target_cat = cat_info[target_cat]
@@ -269,6 +269,7 @@ def generate_ordered_latent_cat_codes(cat_info, other_cat_fixed_val, target_cat,
     spanned_cat = np.concatenate(nums_to_join, axis=1)
     spanned_cat = spanned_cat.reshape((num_target_cat, num_samples_per_cat, sum(cat_info)))
     return spanned_cat.astype(np.int32)
+
 
 
 def generate_ordered_latent_continous_codes(contin_info, other_continous_fixed_val, target_continuous, num_samples_per_continuous):

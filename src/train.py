@@ -15,7 +15,7 @@ from pathlib import Path
 from config import GlobalConfig, TrainingConfig
 from models import define_gan, define_discriminator_and_recognition, define_generator
 from utils import generate_real_samples, generate_latent_points, generate_fake_samples
-from visualization import summarize_performance
+from visualization import summarize_performance, summarize_performance_continuous
 # from data import TrainingData
 
 def custom_loss(y, y_pred):
@@ -87,9 +87,10 @@ def train(args):
 
         print(f"i={i+1}, Disc Loss (real, fake)=({d_loss1:.3f} {d_loss2:.3f}), Gen Loss:{g_1:.3f} Q Loss cat {q_loss_cat:.3f} Q Loss contin {q_loss_continuous:.3f}")
 
-        if (i+1) % (batch_per_epoch) == 0:
-            summarize_performance(this_time_folder, i, gen_model, gan_model, latent_dim, num_cat)
-            summarize_performance(this_time_folder, i+100000, gen_model, gan_model, latent_dim, num_cat)
+        if (i+1) % (batch_per_epoch * 5) == 0:
+            # summarize_performance(this_time_folder, i, gen_model, gan_model, latent_dim, num_cat)
+            summarize_performance_continuous(this_time_folder, i, gen_model, gan_model, latent_dim, num_cat)
+            # summarize_performance(this_time_folder, i+100000, gen_model, gan_model, latent_dim, num_cat)
             gen_model.save(os.path.join(this_time_folder, f"{(i+1)}_generator_model.h5"))
             gan_model.save(os.path.join(this_time_folder, f"{(i+1)}_gan_model.h5"))
             disc_model.save(os.path.join(this_time_folder, f"{(i+1)}_disc_model.h5"))
