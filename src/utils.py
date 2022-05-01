@@ -49,7 +49,7 @@ def generate_latent_points(latent_dim, cat_dim, num_continuous, num_samples):
     label = tf.one_hot(label, depth=cat_dim)
     # Create one continuous latent code
     contin_codes = tf.random.uniform([num_samples, num_continuous], minval=-1, maxval=1)
-    z_input=Concatenate()([label, contin_codes, noise])
+    z_input=Concatenate()([noise, label, contin_codes])
 
     return z_input, label, contin_codes
 
@@ -274,8 +274,6 @@ def generate_ordered_latent_cat_codes(cat_info, other_cat_fixed_val, target_cat,
 
 def generate_ordered_latent_continous_codes(contin_info, other_continous_fixed_val, target_continuous, num_samples_per_continuous):
     """_summary_
-
-    - Assume all continuous variables a uniforly distributed on the range [0, 1]
 
     Example Input:
     contin_info = [3, 10, 2]
