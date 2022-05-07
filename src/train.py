@@ -13,7 +13,7 @@ import tensorflow as tf
 import tensorflow.keras.optimizers as optimizers
 from pathlib import Path
 from config import GlobalConfig, TrainingConfig
-from models import define_gan, define_discriminator_and_recognition, define_generator
+from models import define_gan, define_discriminator_and_recognition, define_generator, define_gan_crypto_punk, define_discriminator_and_recognition_crypto_punk, define_generator_crypto_punk
 from utils import generate_real_samples, generate_latent_points, generate_fake_samples
 from visualization import summarize_performance, summarize_performance_continuous
 # from data import TrainingData
@@ -30,13 +30,28 @@ def train(args):
     num_continuous = 4
     gen_input_size = latent_dim + num_cat + num_continuous #adding coninuous variable as well
 
-    gen_model = define_generator(gen_input_size)
-    disc_model, q_model = define_discriminator_and_recognition(num_cat, num_continuous)
+    use_crypto_punks = True
+    if use_crypto_punks:
+        with open("static/images/crypto.npy", "rb") as fp:
+            x_train = np.load(fp)
+        dataset = x_train/(127.5) - 1
+        gen_model = define_generator_crypto_punk(gen_input_size)
+        disc_model, q_model = define_discriminator_and_recognition_crypto_punk(num_cat, num_continuous)
 
-    # Compile discriminator before passing to define_gan as that will set some weights as non-trainible
-    disc_model.compile(loss="binary_crossentropy", optimizer=optimizers.Adam(lr=args.learning_rate_disc, beta_1=args.adam_beta))
+        # Compile discriminator before passing to define_gan as that will set some weights as non-trainible
+        disc_model.compile(loss="binary_crossentropy", optimizer=optimizers.Adam(lr=args.learning_rate_disc, beta_1=args.adam_beta))
 
-    gan_model = define_gan(gen_model, disc_model, q_model)
+        gan_model = define_gan_crypto_punk(gen_model, disc_model, q_model)
+    else:
+        (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+        dataset = x_train/(127.5) - 1
+        gen_model = define_generator(gen_input_size)
+        disc_model, q_model = define_discriminator_and_recognition(num_cat, num_continuous)
+
+        # Compile discriminator before passing to define_gan as that will set some weights as non-trainible
+        disc_model.compile(loss="binary_crossentropy", optimizer=optimizers.Adam(lr=args.learning_rate_disc, beta_1=args.adam_beta))
+
+        gan_model = define_gan(gen_model, disc_model, q_model)
 
 
     # Make new sub folder for this particular run
@@ -55,9 +70,6 @@ def train(args):
     else:
         offset = 0
 
-    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
-    dataset = x_train/(127.5) - 1
-    
     
     opt = optimizers.Adam(lr=args.learning_rate_gen, beta_1=args.adam_beta)
     gan_model.compile(loss=[tf.keras.losses.BinaryCrossentropy(), tf.keras.losses.CategoricalCrossentropy(), tf.keras.losses.MeanSquaredError()], optimizer=opt, loss_weights=[1, TrainingConfig.RELATIVE_LOSS])
