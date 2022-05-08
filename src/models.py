@@ -137,6 +137,8 @@ def define_generator_crypto_punk(input_shape):
     gen = layers.Activation("relu")(gen)
     gen = layers.Dense(6*6*128, kernel_initializer=RandomNormal(stddev=0.02))(gen)
     gen = layers.Activation("relu")(gen)
+    gen = layers.Dense(6*6*128, kernel_initializer=RandomNormal(stddev=0.02))(gen)
+    gen = layers.Activation("relu")(gen)
     gen = layers.BatchNormalization()(gen)
     gen = layers.Reshape((6, 6, 128))(gen)
     gen = layers.Conv2DTranspose(64, (4,4), strides=(2,2), padding="same", kernel_initializer=RandomNormal(stddev=0.02))(gen)
