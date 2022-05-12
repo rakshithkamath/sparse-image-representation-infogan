@@ -92,7 +92,7 @@ def generate_all_cat_fake_samples(generator, latent_dim, cat_dim):
     # images = generator(z_input, training=True)
     # return images
     # create noise input
-    noise = tf.random.normal([num_samples, latent_dim],stddev=2.0)
+    noise = tf.random.normal([num_samples, latent_dim],stddev=1)
     # Create categorical latent code
     label = tf.random.uniform([num_samples], minval=0, maxval=cat_dim, dtype=tf.int32)
     label = tf.one_hot(label, depth=cat_dim)
@@ -165,6 +165,7 @@ def generate_ordered_latent_codes(span_type, cat_info, other_cat_fixed_val, targ
     """
 
     if span_type == "span_categorical":
+        
         num_cat_in_target = cat_info[target_cat]
         # If you want to span categorical, you need to have some fixed continous codes anyway. Could be random or fixed
         spanned_cat = generate_ordered_latent_cat_codes(
@@ -177,8 +178,12 @@ def generate_ordered_latent_codes(span_type, cat_info, other_cat_fixed_val, targ
         latent_codes_no_noise = np.concatenate(
             [spanned_cat, fixed_continuous], axis=2)
         #latent_codes_no_noise.shape = (num_cat_in_target, num_samples_per_cat, latent_code_len_no_noise)
+        latent_noise = np.random.normal(loc=0, scale=1.5, size=(1, latent_codes_no_noise.shape[1], latent_noise_dim))
+        latent_noise = np.tile(latent_noise, (latent_codes_no_noise.shape[0], 1, 1))
 
     elif span_type == "span_continuous":
+        latent_noise = np.random.normal(loc=0, scale=1, size=(1, 1, latent_noise_dim))
+        latent_noise = np.tile(latent_noise, (latent_codes_no_noise.shape[0], latent_codes_no_noise.shape[1], 1))
         # If you want to span continous, you need to have some fixed categorical codes anyway. Could be random or fixed
         spanned_continuous = generate_ordered_latent_continous_codes(
             contin_info, other_continous_fixed_val, target_continuous, num_samples_per_continuous)
@@ -191,6 +196,7 @@ def generate_ordered_latent_codes(span_type, cat_info, other_cat_fixed_val, targ
         #latent_codes_no_noise.shape = (num_samples_per_continuous, 1, latent_code_len_no_noise)
 
     elif span_type == "span_both":
+        
         # If you want to span both, Only 1 sample per each category, but multiple while spanning continuous
         assert num_samples_per_continuous == num_samples_per_cat
         spanned_cat = generate_ordered_latent_cat_codes(
@@ -199,11 +205,12 @@ def generate_ordered_latent_codes(span_type, cat_info, other_cat_fixed_val, targ
                                                 for _ in range(cat_info[target_cat])])
         latent_codes_no_noise = np.concatenate(
             [spanned_cat, continous_span_for_each_cat], axis=2)
-        #latent_codes_no_noise.shape = (cat_info[target_cat], num_samples_per_continuous, latent_code_len_no_noise)
+        latent_noise = np.random.normal(loc=0, scale=1, size=(1, 1, latent_noise_dim))
+        latent_noise = np.tile(latent_noise, (latent_codes_no_noise.shape[0], latent_codes_no_noise.shape[1], 1))
 
     # Add the pure noise part of the latent code
-    latent_noise = np.random.normal(loc=0, scale=1, size=(1, 1, latent_noise_dim))
-    latent_noise = np.tile(latent_noise, (latent_codes_no_noise.shape[0], latent_codes_no_noise.shape[1], 1))
+    
+    
 
     latent_codes = np.concatenate(
         [latent_noise, latent_codes_no_noise], axis=2)
