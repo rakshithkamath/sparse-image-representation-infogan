@@ -9,7 +9,8 @@ import time
 import glob
 # from black import TRANSFORMED_MAGICS
 import numpy as np
-from src.config import ReportingConfig
+from config import ReportingConfig
+from visualization import summarize_performance_categorical, summarize_performance_categorical
 import tensorflow as tf
 import tensorflow.keras.optimizers as optimizers
 import tensorflow_probability as tfp
@@ -41,7 +42,7 @@ def train(args):
         num_categories, num_continuous)
     # Compile discriminator before passing to define_gan as that will set some weights as non-trainible
     disc_model.compile(loss="binary_crossentropy", optimizer=optimizers.Adam(
-        lr=args.learning_rate_disc, beta_1=args.adam_beta))
+        lr=args.learning_rate_disc))
     gan_model = load_model_funcs["gan"](gen_model, disc_model, q_model)
 
     dataset = load_dataset(args.dataset_name)
@@ -70,11 +71,12 @@ def train(args):
 
     gen_loss_func1 = tf.keras.losses.BinaryCrossentropy()
     gen_loss_func_cat = tf.keras.losses.CategoricalCrossentropy()
-    gen_optimizer = optimizers.Adam(lr=args.learning_rate_gen, beta_1=args.adam_beta)
-    q_optimizer = optimizers.Adam(lr=args.learning_rate_gen, beta_1=args.adam_beta)
+    gen_optimizer = optimizers.Adam(lr=args.learning_rate_gen)
+    q_optimizer = optimizers.Adam(lr=args.learning_rate_q)
 
-    batch_per_epoch = int(dataset.shape[0] / args.batch_size)
-    num_steps = batch_per_epoch * args.epochs
+    batches_per_epoch = int(dataset.shape[0] / args.batch_size)
+    num_steps = batches_per_epoch * args.epochs
+
     d_loss1, d_loss2 = 0, 0
     for iter in range(num_steps):
         i = iter + offset
@@ -107,9 +109,12 @@ def train(args):
             q_loss_continuous = tf.reduce_mean(-dist.log_prob(contin_codes))
             gan_fooling_loss = gen_loss_func1(y_gan, gan_disc_output)
             q_loss_cat = gen_loss_func_cat(cat_codes, q_pred_cat_codes)
-            q_loss = TrainingConfig.CAT_LOSS_SCALE*q_loss_cat + \
-                TrainingConfig.CONTIN_LOSS_SCALE*q_loss_continuous
-            gen_loss = gan_fooling_loss + q_loss_cat
+            q_loss = q_loss_cat*TrainingConfig.CAT_LOSS_SCALE + \
+                     q_loss_continuous*TrainingConfig.CONTIN_LOSS_SCALE
+            gen_loss = gan_fooling_loss + \
+                     q_loss_cat*TrainingConfig.CAT_LOSS_SCALE + \
+                     q_loss_continuous*TrainingConfig.CONTIN_LOSS_SCALE
+
 
         # Propogate loss for Generator and Q Network
         g_gradients = g_tape.gradient(gen_loss, gen_model.trainable_variables)
@@ -119,19 +124,29 @@ def train(args):
         q_optimizer.apply_gradients(
             zip(q_gradients, q_model.trainable_variables))
 
-        print(f"i={i+1}, Disc Loss (real, fake)=({d_loss1:.3f} {d_loss2:.3f}),"
-              f" Gen Loss:{gan_fooling_loss:.3f} Q Loss cat {q_loss_cat:.3f} "
-              f"Q Loss contin {q_loss_continuous:.3f}")
+        if (i+1) % args.print_every == 0:
+            print(f"i={i+1}, Disc Loss (real, fake)=({d_loss1:.3f} {d_loss2:.3f}),"
+                f" Gen Loss:{gan_fooling_loss:.3f} Q Loss cat {q_loss_cat:.3f} "
+                f"Q Loss contin {q_loss_continuous:.3f}")
 
-        if (i+1) % (batch_per_epoch * 2) == 0:
-            for _ in range(ReportingConfig.NUM_RAND_NOISE_VECT_PLOTS_TO_SAVE)
-            summarize_performance_continuous(
-                this_time_folder, i,
-                gen_model,
-                gan_model,
-                latent_dim,
-                num_categories,
-                num_continuous)
+        if (i+1) % (batches_per_epoch * ReportingConfig.SAVE_IMAGES_EVERY) == 0:
+            for j in range(ReportingConfig.NUM_RAND_NOISE_VECT_PLOTS_TO_SAVE):
+                summarize_performance_continuous(
+                    this_time_folder, i+j,
+                    gen_model,
+                    gan_model,
+                    latent_dim,
+                    num_categories,
+                    num_continuous)
+                summarize_performance_categorical(
+                    this_time_folder, i+j,
+                    gen_model,
+                    gan_model,
+                    latent_dim,
+                    num_categories,
+                    num_continuous)
+
+        if (i+1) % ( ReportingConfig.CHECKPOINT_EVERY * batches_per_epoch) == 0:
             gen_model.save(os.path.join(this_time_folder,f"{(i+1)}_generator_model.h5"))
             gan_model.save(os.path.join(this_time_folder, f"{(i+1)}_gan_model.h5"))
             disc_model.save(os.path.join(this_time_folder, f"{(i+1)}_disc_model.h5"))
@@ -142,17 +157,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--epochs", required=False, default=TrainingConfig.NUM_EPOCHS,
                         help="Number of epochs to train.", type=int)
+    parser.add_argument("--print_every", required=False, default=ReportingConfig.PRINT_EVERY,
+                        help="Number of epochs to train.", type=int)    
     parser.add_argument("--learning_rate_disc", required=False, default=TrainingConfig.LEARNING_RATE_DISC,
                         help="Learning rate for the discriminator")
     parser.add_argument("--learning_rate_gen", required=False, default=TrainingConfig.LEARNING_RATE_GEN,
                         help="Learning rate for the generator")
-    parser.add_argument("--adam_beta", required=False, default=TrainingConfig.ADAM_BETA,
-                        help="Beta")
+    parser.add_argument("--learning_rate_q", required=False, default=TrainingConfig.LEARNING_RATE_Q,
+                        help="Learning rate for the generator")
     parser.add_argument("--latent_dim", required=False, type=int, default=TrainingConfig.LATENT_NOISE_DIM,
                         help="The number of elements of pure noise")
     parser.add_argument("--model_dir", required=False,
                         default=GlobalConfig.get("MODEL_DIR"))
-    parser.add_argument("--dataset_name", required=False,
+    parser.add_argument("--dataset_name", required=False, type=str,
                         default=TrainingConfig.DATASET_NAME)
     parser.add_argument("--batch_size", required=False, type=int,
                         default=TrainingConfig.BATCH_SIZE)
