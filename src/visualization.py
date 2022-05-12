@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from utils import generate_all_cat_fake_samples, generate_ordered_latent_codes
+from utils import generate_all_cat_fake_samples, generate_ordered_latent_codes, generate_latent_points
 import os
 import pdb
 import numpy as np
@@ -33,6 +33,27 @@ def summarize_performance(output_folder, step, gen_model, gan_model, latent_dim,
     plt.close()
 
 
+def summarize_performance_tsne(output_folder, step, gen_model, gan_model, latent_dim, num_cat, num_continuous, num_samples=9):
+    """
+
+    Args:
+        step: Step number
+        gen_model: generator model
+        gan_model: GAN model
+        latent_dim: Latent variables dimension
+        num_cat: number of categorical variables
+        num_continuous: Number of continuous variables
+        num_samples: number of samples that need to be created
+
+    Returns:
+
+    """
+    # Generator Training
+    latent_code, cat_codes, contin_codes = generate_latent_points(latent_dim, num_cat, num_continuous, num_samples)
+    X = gen_model(latent_code, training=True)
+    X = X.numpy()
+
+
 def summarize_performance_continuous(output_folder, step, gen_model, gan_model, latent_dim, num_cat, num_continuous, num_samples=9):
     """
 
@@ -54,7 +75,7 @@ def summarize_performance_continuous(output_folder, step, gen_model, gan_model, 
         target_cat = 0
         num_samples_per_cat = num_cat
 
-        contin_info = [2]*num_continuous
+        contin_info = [10]*num_continuous
         other_continous_fixed_val = [0]*num_continuous
         target_continuous = contin_i
         num_samples_per_continuous = num_cat

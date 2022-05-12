@@ -45,7 +45,7 @@ def generate_latent_points(latent_dim, cat_dim, num_continuous, num_samples):
     # create noise input
     noise = tf.random.normal([num_samples, latent_dim])
     # Create categorical latent code
-    label = tf.random.uniform([num_samples], minval=0, maxval=10, dtype=tf.int32)
+    label = tf.random.uniform([num_samples], minval=0, maxval=cat_dim, dtype=tf.int32)
     label = tf.one_hot(label, depth=cat_dim)
     # Create one continuous latent code
     contin_codes = tf.random.uniform([num_samples, num_continuous], minval=-1, maxval=1)
@@ -94,7 +94,7 @@ def generate_all_cat_fake_samples(generator, latent_dim, cat_dim):
     # create noise input
     noise = tf.random.normal([num_samples, latent_dim],stddev=2.0)
     # Create categorical latent code
-    label = tf.random.uniform([num_samples], minval=0, maxval=10, dtype=tf.int32)
+    label = tf.random.uniform([num_samples], minval=0, maxval=cat_dim, dtype=tf.int32)
     label = tf.one_hot(label, depth=cat_dim)
     # Create one continuous latent code
     c_1 = tf.random.uniform([num_samples, 1], minval=-1, maxval=1)

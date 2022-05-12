@@ -41,7 +41,14 @@ class TrainingConfig():
     LEARNING_RATE_GEN = 0.0002
     ADAM_BETA = 0.5
     RELATIVE_LOSS = 1
-    LATENT_NOISE_DIM = 62
+    LATENT_NOISE_DIM = 30#62
+    IMAGE_NOISE_SCALE = 0
+    DATASET_NAME = "MNIST" # Can also be "CRYPTO_PUNK"
+    NUM_CATEGORIES = 10
+    NUM_CONTINUOUS = 4
+    DISCRIM_TRAIN_INTERVAL = 1 #How many generator training intervals are completed every discriminator update
+    CONTIN_LOSS_SCALE = 0.1
+    CAT_LOSS_SCALE = 1
 
 
 class InferenceConfig(TrainingConfig):
@@ -53,5 +60,6 @@ class ReportingConfig():
     Config for reporting / visulalization
     """
     IMAGES_TO_SAVE = 10
+    NUM_RAND_NOISE_VECT_PLOTS_TO_SAVE = 2
     # OUTPUT_IMAGE_WIDTH = 200
     # OUTPUT_IMAGE_HEIGHT = 400

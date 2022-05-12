@@ -7,6 +7,7 @@ from tensorflow.keras.initializers import RandomNormal
 from config import TrainingConfig
 import pdb
 
+
 def define_discriminator_and_recognition(cat_dim, num_continuous, input_shape=(28,28,1)):
     """
     Args:
@@ -30,9 +31,14 @@ def define_discriminator_and_recognition(cat_dim, num_continuous, input_shape=(2
     q = layers.BatchNormalization()(q)
     q = layers.LeakyReLU(alpha=0.1)(q)
     cat_out_codes = layers.Dense(cat_dim, activation="softmax")(q)
-    contin_out_codes = layers.Dense(num_continuous)(q)
 
-    q_model = Model(in_image, outputs=[cat_out_codes, contin_out_codes])
+    # Gaussian distribution standard deviation (exponential activation to ensure the value is positive)
+    continuous_sigma = tf.keras.layers.Dense(num_continuous, activation=lambda x: tf.math.exp(x))(q)
+
+    # No activation the mean output
+    continuous_mu = tf.keras.layers.Dense(num_continuous)(q)
+
+    q_model = Model(in_image, outputs=[cat_out_codes, continuous_mu, continuous_sigma])
     return d_model, q_model
 
 def define_generator(input_shape):
@@ -116,9 +122,17 @@ def define_discriminator_and_recognition_crypto_punk(cat_dim, num_continuous, in
     q = layers.BatchNormalization()(q)
     q = layers.LeakyReLU(alpha=0.1)(q)
     cat_out_codes = layers.Dense(cat_dim, activation="softmax")(q)
-    contin_out_codes = layers.Dense(num_continuous)(q)
+    # contin_out_codes = layers.Dense(num_continuous)(q)
 
-    q_model = Model(in_image, outputs=[cat_out_codes, contin_out_codes])
+
+    # Gaussian distribution standard deviation (exponential activation to ensure the value is positive)
+    continuous_sigma = tf.keras.layers.Dense(num_continuous, activation=lambda x: tf.math.exp(x))(q)
+
+    # No activation the mean output
+    continuous_mu = tf.keras.layers.Dense(num_continuous)(q)
+
+
+    q_model = Model(in_image, outputs=[cat_out_codes, continuous_mu, continuous_sigma])
     return d_model, q_model
 
 def define_generator_crypto_punk(input_shape):
@@ -133,9 +147,7 @@ def define_generator_crypto_punk(input_shape):
         tensorflow.keras.models.Model: Tensorflow model
     """
     input_dim = layers.Input(shape=(input_shape,))
-    gen = layers.Dense(3*6*6*128, kernel_initializer=RandomNormal(stddev=0.02))(input_dim)
-    gen = layers.Activation("relu")(gen)
-    gen = layers.Dense(6*6*128, kernel_initializer=RandomNormal(stddev=0.02))(gen)
+    gen = layers.Dense(12*6*128, kernel_initializer=RandomNormal(stddev=0.02))(input_dim)
     gen = layers.Activation("relu")(gen)
     gen = layers.Dense(6*6*128, kernel_initializer=RandomNormal(stddev=0.02))(gen)
     gen = layers.Activation("relu")(gen)
@@ -180,3 +192,17 @@ def define_gan_crypto_punk(g_model, d_model, q_model):
 
     model = Model(g_model.input, joined_output)
     return model
+
+
+LOAD_MODEL_FUNC = {
+    "MNIST": {
+        "generator": define_generator,
+        "discriminator_recognition": define_discriminator_and_recognition,
+        "gan": define_gan
+    },
+    "CRYPTO_PUNK": {
+        "generator": define_generator_crypto_punk,
+        "discriminator_recognition": define_discriminator_and_recognition_crypto_punk,
+        "gan": define_gan_crypto_punk
+    }
+}
