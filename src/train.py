@@ -1,7 +1,6 @@
 """
 Train a GAN
 """
-import pdb
 import os
 import argparse
 from re import T
@@ -16,12 +15,11 @@ import tensorflow_probability as tfp
 from pathlib import Path
 
 
-from config import GlobalConfig, TrainingConfig
+from config import TrainingConfig
 from models import LOAD_MODEL_FUNC
 from utils import generate_real_samples, generate_latent_points, generate_fake_samples
 from visualization import summarize_performance_continuous
 from data import load_dataset
-# from data import TrainingData
 
 
 def train(args):
@@ -48,7 +46,7 @@ def train(args):
 
     # Make new sub folder for this particular run
     this_time_folder = os.path.join(
-        args.model_dir, time.strftime("%Y-%m-%d_%H-%M-%S"))
+        args.save_results_dir, time.strftime("%Y-%m-%d_%H-%M-%S"))
     Path(this_time_folder).mkdir(parents=True, exist_ok=True)
 
     if args.model_in_folder:
@@ -166,8 +164,8 @@ if __name__ == "__main__":
                         help="Learning rate for the generator")
     parser.add_argument("--latent_dim", required=False, type=int, default=TrainingConfig.LATENT_NOISE_DIM,
                         help="The number of elements of pure noise")
-    parser.add_argument("--model_dir", required=False,
-                        default=GlobalConfig.get("MODEL_DIR"))
+    parser.add_argument("--save_results_dir", required=False,
+                        default=ReportingConfig.SAVE_RESULTS_DIR)
     parser.add_argument("--dataset_name", required=False, type=str,
                         default=TrainingConfig.DATASET_NAME)
     parser.add_argument("--batch_size", required=False, type=int,

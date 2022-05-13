@@ -11,7 +11,7 @@ Our GAN is able to output images shown below (right) next to images from the ori
 
 # Usage
 To run, simply call ```python src/train.py```.
-Available cutumizations are also possible below:
+Images and trained models will be periodically save in "trained_models_and_images" by default. This path and other useful parameters can be changed in the src/config.py file or can be customized using the command line options below.
 ```
 usage: train.py [-h] [--epochs EPOCHS] [--print_every PRINT_EVERY] [--learning_rate_disc LEARNING_RATE_DISC] [--learning_rate_gen LEARNING_RATE_GEN] [--learning_rate_q LEARNING_RATE_Q]
                 [--latent_dim LATENT_DIM] [--model_dir MODEL_DIR] [--dataset_name DATASET_NAME] [--batch_size BATCH_SIZE] [--num_categories NUM_CATEGORIES]
