@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 from utils import generate_all_cat_fake_samples, generate_ordered_latent_codes, generate_latent_points
 import os
-import pdb
 import numpy as np
 
 def summarize_performance(output_folder, step, gen_model, gan_model, latent_dim, num_cat, num_samples=9):
@@ -135,7 +134,7 @@ def summarize_performance_categorical(output_folder, step, gen_model, gan_model,
     num_samples_per_cat = num_cat
 
     contin_info = [2]*num_continuous
-    other_continous_fixed_val = [None]*num_continuous
+    other_continous_fixed_val = [0]*num_continuous
     target_continuous = 0
     num_samples_per_continuous = num_cat
 

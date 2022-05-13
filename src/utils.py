@@ -2,7 +2,6 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.layers import Concatenate
-import pdb
 from config import TrainingConfig
 
 def generate_real_samples(dataset, num_samples):
